@@ -2255,9 +2255,7 @@ struct ChatView: View {
             .overlay {  // Overlay for model switching/restarting
                 if viewModel.isRestarting && !viewModel.isInitializing {  // Show only for restarts/switches, not initial load
                     restartingOverlayView(
-                        title: viewModel.llm == nil
-                        && viewModel.selectedModel != nil
-                        ? "Switching Model..." : "Restarting Model..."
+                        title: "Initializing Model..."
                     )
                 }
             }
