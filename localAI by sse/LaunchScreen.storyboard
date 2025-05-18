@@ -16,7 +16,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="localAI_circle" translatesAutoresizingMaskIntoConstraints="NO" id="ZJW-f2-Cl6">
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="localAI-without-background" translatesAutoresizingMaskIntoConstraints="NO" id="ZJW-f2-Cl6">
                                 <rect key="frame" x="76" y="362" width="240" height="128"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -33,7 +33,7 @@
     </scenes>
     <color key="tintColor" name="AccentColor"/>
     <resources>
-        <image name="localAI_circle" width="1014" height="1009"/>
+        <image name="localAI-without-background" width="1024" height="1024"/>
         <namedColor name="AccentColor">
             <color red="0.83137255907058716" green="0.78431367874145508" blue="0.62745100259780884" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
