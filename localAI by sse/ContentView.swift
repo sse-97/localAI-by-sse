@@ -2908,12 +2908,45 @@ struct ContentView: View {
     }
 }
 
+// LaunchScreen recreation as a SwiftUI view
+struct LaunchScreenView: View {
+    var body: some View {
+        ZStack {
+            // Match the AccentColor from the Assets
+            Color("AccentColor")
+                .ignoresSafeArea()
+            
+            // Center the logo
+            Image("localAI-without-background")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 240, height: 128)
+        }
+    }
+}
+
 // MARK: - Application Main Struct
 @main
 struct localAI_by_sseApp: App {
+    @State private var isLaunchScreenActive = true
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ZStack {
+                if !isLaunchScreenActive {
+                    ContentView()
+                } else {
+                    // Recreate the LaunchScreen as a SwiftUI view
+                    LaunchScreenView()
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.3), value: isLaunchScreenActive)
+            .task {
+                // Delay for 2 seconds before showing the main content
+                try? await Task.sleep(for: .seconds(2))
+                isLaunchScreenActive = false
+            }
         }
     }
 }
