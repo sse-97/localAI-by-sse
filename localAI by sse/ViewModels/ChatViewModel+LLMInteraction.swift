@@ -37,10 +37,10 @@ extension ChatViewModel {
                 self.modelInfo = "Error: No model available to load."
                 self.llm = nil
                 if initialLoad { self.isInitializing = false }
-                self.isRestarting = false
-                logDebug(
-                    "--- Critical Error: No model configuration available to load. ---"
-                )
+                self.isRestarting = false;            logDebug(
+                "--- Critical Error: No model configuration available to load. ---"
+            )
+            self.handleModelLoadingError(.fileNotFound(filename: "selectedModel"))
             }
             return
         }
@@ -81,14 +81,10 @@ extension ChatViewModel {
                 self.modelInfo = "Failed to construct URL for \(modelToLoad.displayName)."
                 self.llm = nil
                 if initialLoad { self.isInitializing = false }
-                self.isRestarting = false
-                logDebug(
-                    "--- Model URL could not be constructed for \(modelToLoad.displayName). ---"
-                )
-                self.userAlert = UserAlert(
-                    title: "Model Load Error",
-                    message: "Could not find the path for model file: \(modelToLoad.filename)."
-                )
+                self.isRestarting = false;            logDebug(
+                "--- Model URL could not be constructed for \(modelToLoad.displayName). ---"
+            )
+            self.handleModelLoadingError(.urlConstructionFailed(filename: modelToLoad.displayName))
             }
             return
         }
@@ -102,10 +98,7 @@ extension ChatViewModel {
                 logDebug(
                     "--- Model file does not exist at path: \(validModelUrl.path) for \(modelToLoad.displayName). ---"
                 )
-                self.userAlert = UserAlert(
-                    title: "Model Load Error",
-                    message: "Model file '\(modelToLoad.filename)' is missing or inaccessible."
-                )
+                self.handleFileSystemError(.pathDoesNotExist(path: validModelUrl.path))
             }
             return
         }
@@ -161,10 +154,7 @@ extension ChatViewModel {
                     self.logDebug(
                         "--- LLM initialization failed for: \(modelToLoad.displayName) from \(validModelUrl.path). Check LLM library logs. ---"
                     )
-                    self.userAlert = UserAlert(
-                        title: "Model Load Failed",
-                        message: "Could not initialize \(modelToLoad.displayName). The model file might be corrupted, incompatible, or require more memory."
-                    )
+                    self.handleModelLoadingError(.initializationFailed(reason: "Failed to load model \(modelToLoad.displayName)"))
                 }
                 self.refreshContextMetrics()  // Update context metrics based on the new/failed model
                 
@@ -207,10 +197,7 @@ extension ChatViewModel {
     func updateModelParameters() {
         guard let llm = llm else {
             logDebug("--- Attempted to update parameters but LLM is nil. ---")
-            userAlert = UserAlert(
-                title: "Error",
-                message: "Cannot update parameters: Model not loaded."
-            )
+            handleLLMInteractionError(.modelNotReady)
             return
         }
         llm.temp = self.modelParameters.temperature
@@ -226,7 +213,8 @@ extension ChatViewModel {
         )
         
         Task { @MainActor in
-            self.userAlert = UserAlert(
+            // Use centralized success message handling
+            self.showSuccessAlert(
                 title: "Parameters Updated",
                 message: "LLM parameters have been applied."
             )
@@ -241,12 +229,15 @@ extension ChatViewModel {
         else {
             if trimmedInput.isEmpty {
                 logDebug("--- Attempted to send empty message ---")
+                handleValidationError(.emptyInput(field: "message"))
             }
             if llm == nil {
                 logDebug("--- Attempted to send message but LLM is nil. ---")
+                handleLLMInteractionError(.modelNotReady)
             }
             if isGenerating {
                 logDebug("--- Attempted to send message while already generating. ---")
+                handleValidationError(.invalidFormat(field: "action", expected: "Send message when not generating"))
             }
             return
         }
@@ -329,10 +320,7 @@ extension ChatViewModel {
         }
         guard !isGenerating, !isRestarting, !isInitializing else {
             logDebug("--- Model switch attempted during generation, restart, or initialization. Ignoring. ---")
-            userAlert = UserAlert(
-                title: "Busy",
-                message: "Please wait for the current operation to complete before switching models."
-            )
+            handleValidationError(.invalidFormat(field: "action", expected: "Model switch when not busy"))
             return
         }
         if isGenerating { stop() }  // Stop any ongoing generation
@@ -425,7 +413,8 @@ extension ChatViewModel {
                 self.modelInfo = "Error: No default model available after reset."
                 self.isInitializing = false  // Allow UI to show an error state if needed
             }
-            self.userAlert = UserAlert(
+            // Use centralized success message handling
+            self.showSuccessAlert(
                 title: "Reset Complete",
                 message: "Application has been reset to its initial state."
             )

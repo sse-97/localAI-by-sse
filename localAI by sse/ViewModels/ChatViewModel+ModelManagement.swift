@@ -91,10 +91,7 @@ extension ChatViewModel {
             logDebug(
                 "--- Error: No temporary file URL available for model processing. ---"
             )
-            userAlert = UserAlert(
-                title: "Error",
-                message: "Could not find the selected model file. Please try again."
-            )
+            handleFileSystemError(.temporaryFileCreationFailed)
             cleanupTemporaryFile()
             return
         }
@@ -121,10 +118,7 @@ extension ChatViewModel {
                         "--- Error: Source temporary file does not exist at \(sourceTemporaryURL.path). ---"
                     )
                     await MainActor.run {
-                        self.userAlert = UserAlert(
-                            title: "Error Adding Model",
-                            message: "The temporary model file disappeared. Please try picking it again."
-                        )
+                        self.handleFileSystemError(.pathDoesNotExist(path: sourceTemporaryURL.path))
                     }
                     cleanupTemporaryFile()  // Clean up ViewModel state
                     return
@@ -187,7 +181,8 @@ extension ChatViewModel {
                     logDebug(
                         "--- Added/Updated custom model: \(finalModelConfig.displayName) with template '\(templateType.rawValue)' ---"
                     )
-                    self.userAlert = UserAlert(
+                    // Use centralized success message handling
+                    self.showSuccessAlert(
                         title: "Model Added",
                         message: "\(finalModelConfig.displayName) has been successfully added."
                     )
@@ -198,10 +193,7 @@ extension ChatViewModel {
                     "--- Failed to copy/process model from \(sourceTemporaryURL.path) to \(destinationURL.path): \(error.localizedDescription) ---"
                 )
                 await MainActor.run {
-                    self.userAlert = UserAlert(
-                        title: "Error Adding Model",
-                        message: "Failed to copy model file: \(error.localizedDescription)"
-                    )
+                    self.handleFileSystemError(.copyFailed(source: sourceTemporaryURL.path, destination: destinationURL.path, reason: error.localizedDescription))
                 }
                 // Don't delete sourceTemporaryURL here if copy failed, it might be needed for retry or inspection.
                 // UIDocumentPicker's temporary file lifecycle should handle it.
@@ -277,7 +269,8 @@ extension ChatViewModel {
                             )
                         }
                     }
-                    self.userAlert = UserAlert(
+                    // Use centralized success message handling
+                    self.showSuccessAlert(
                         title: "Model Deleted",
                         message: "\(model.displayName) has been deleted."
                     )
@@ -290,10 +283,7 @@ extension ChatViewModel {
                     "--- Failed to delete model file \(fileURL.path): \(error.localizedDescription) ---"
                 )
                 await MainActor.run {
-                    self.userAlert = UserAlert(
-                        title: "Error Deleting Model",
-                        message: "Failed to delete model file: \(error.localizedDescription)"
-                    )
+                    self.handleFileSystemError(.deleteFailed(path: fileURL.path, reason: error.localizedDescription))
                 }
             }
             // Reset confirmation state

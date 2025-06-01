@@ -31,10 +31,9 @@ extension UserDefaults {
                     from: data
                 )
             } catch {
-                // Consider logging this error to the app's debug log if available
-                print(
-                    "UserDefaults Error: Failed to decode userModelConfigurations: \(error.localizedDescription)"
-                )
+                // Log through centralized error handling system
+                let error = AppError.system(.dataCorruption(dataType: "userModelConfigurations", details: error.localizedDescription))
+                ErrorManager.shared.logError(error)
                 return []
             }
         }
@@ -43,10 +42,9 @@ extension UserDefaults {
                 let data = try JSONEncoder().encode(newValue)
                 set(data, forKey: Keys.userModelConfigurationsData)
             } catch {
-                // Consider logging this error
-                print(
-                    "UserDefaults Error: Failed to encode userModelConfigurations: \(error.localizedDescription)"
-                )
+                // Log through centralized error handling system
+                let error = AppError.system(.dataCorruption(dataType: "userModelConfigurations", details: error.localizedDescription))
+                ErrorManager.shared.logError(error)
             }
         }
     }

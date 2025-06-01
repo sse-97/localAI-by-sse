@@ -45,6 +45,10 @@ final class ChatViewModel: ObservableObject {
     @Published var isShowingModelConfigSheet: Bool = false
     @Published var isShowingPrivacyPolicy: Bool = false
     
+    // MARK: Centralized Error Handling State
+    @Published var currentError: AppError? = nil
+    @Published var bannerError: AppError? = nil
+    
     // MARK: Public Properties
     public var llm: LLM?
     
@@ -122,6 +126,19 @@ final class ChatViewModel: ObservableObject {
             return $0.displayName.localizedCaseInsensitiveCompare(
                 $1.displayName
             ) == .orderedAscending  // Sort by name
+        }
+    }
+    
+    // MARK: Error State Management
+    func clearCurrentError() {
+        Task { @MainActor in
+            self.currentError = nil
+        }
+    }
+    
+    func clearBannerError() {
+        Task { @MainActor in
+            self.bannerError = nil
         }
     }
 }

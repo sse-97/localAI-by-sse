@@ -13,6 +13,56 @@ struct ContentView: View {
     @State private var isShowingGlobalResetConfirmation = false  // For the toolbar reset option
     
     var body: some View {
+        mainContent
+            .environmentObject(viewModel)
+            .sheet(
+                isPresented: $viewModel.isShowingModelConfigSheet,
+                onDismiss: handleSheetDismiss
+            ) {
+                modelConfigurationSheetContent
+            }
+            .alert(item: $viewModel.userAlert) { alertContent in
+                Alert(
+                    title: Text(alertContent.title),
+                    message: Text(alertContent.message),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
+            .overlay(errorOverlayContent)
+            .overlay(errorBannerContent)
+            .alert(
+                StringConstants.emergencyResetTitle,
+                isPresented: $isShowingGlobalResetConfirmation
+            ) {
+                Button("Cancel", role: .cancel) {}
+                Button("Reset Application", role: .destructive) {
+                    viewModel.emergencyReset()
+                }
+            } message: {
+                Text(StringConstants.emergencyResetMessage)
+            }
+            .alert(
+                "Important Information",
+                isPresented: contentDisclaimerBinding
+            ) {
+                Button("I Understand") {
+                    viewModel.hasShownContentDisclaimer = true
+                    UserDefaults.standard.set(
+                        true,
+                        forKey: "hasShownContentDisclaimer"
+                    )
+                }
+            } message: {
+                Text(
+                    "This app uses AI models to generate content. While we implement safeguards, AI may occasionally produce unexpected or inappropriate responses. Content is generated locally on your device and not monitored."
+                )
+            }
+    }
+    
+    // MARK: - Computed Properties
+    
+    @ViewBuilder
+    private var mainContent: some View {
         Group {
             if viewModel.isOSVersionIncompatible {
                 VersionIncompatibleView()
@@ -30,106 +80,110 @@ struct ContentView: View {
                 tabViewContent
             }
         }
-        .environmentObject(viewModel)  // Pass viewModel to the environment if needed by deeper views (though direct passing is used here)
-        .sheet(
-            isPresented: $viewModel.isShowingModelConfigSheet,
-            onDismiss: {
-                // This onDismiss is for the sheet itself.
-                // If the user cancels ModelConfigurationSheet, its onCancel should call cleanupTemporaryFile.
-                // If they complete, processConfiguredModel is called.
-                // This ensures cleanup if the sheet is dismissed by swipe without interaction.
-                if viewModel.pickedTemporaryModelFileURL != nil {  // If a file was picked but not processed
-                    viewModel.logDebug(
-                        "--- ModelConfigurationSheet dismissed, cleaning up any pending temporary file state. ---"
-                    )
-                    viewModel.cleanupTemporaryFile()
-                }
-            }
-        ) {
-            // Content of the sheet for model configuration
-            if let tempURL = viewModel.pickedTemporaryModelFileURL,
-               let originalFilename = viewModel.originalPickedModelFilename
-            {
-                ModelConfigurationSheet(
-                    temporaryFileURL: tempURL,
-                    originalFilename: originalFilename,
-                    onComplete: {
+    }
+    
+    @ViewBuilder
+    private var modelConfigurationSheetContent: some View {
+        // Content of the sheet for model configuration
+        if let tempURL = viewModel.pickedTemporaryModelFileURL,
+           let originalFilename = viewModel.originalPickedModelFilename
+        {
+            ModelConfigurationSheet(
+                temporaryFileURL: tempURL,
+                originalFilename: originalFilename,
+                onComplete: {
+                    configuredModelIntent,
+                    templateType,
+                    systemPrompt in
+                    viewModel.processConfiguredModel(
                         configuredModelIntent,
-                        templateType,
-                        systemPrompt in
-                        viewModel.processConfiguredModel(
-                            configuredModelIntent,
-                            templateType: templateType,
-                            systemPrompt: systemPrompt
-                        )
-                    },
-                    onCancel: {
-                        viewModel.isShowingModelConfigSheet = false  // Dismiss the sheet
-                        viewModel.cleanupTemporaryFile()  // Clean up temp file state
-                    }
-                )
-            } else {
-                // Fallback if sheet is shown without necessary data (should not happen with current logic)
-                VStack {
-                    Text(
-                        "Error: Missing model file information for configuration."
+                        templateType: templateType,
+                        systemPrompt: systemPrompt
                     )
-                    .padding()
-                    Button("Dismiss") {
-                        viewModel.isShowingModelConfigSheet = false
-                    }
-                    .padding()
-                }
-            }
-        }
-        .alert(item: $viewModel.userAlert) { alertContent in  // For general user alerts
-            Alert(
-                title: Text(alertContent.title),
-                message: Text(alertContent.message),
-                dismissButton: .default(Text("OK"))
-            )
-        }
-        // Global reset confirmation from toolbar
-        .alert(
-            StringConstants.emergencyResetTitle,
-            isPresented: $isShowingGlobalResetConfirmation
-        ) {
-            Button("Cancel", role: .cancel) {}
-            Button("Reset Application", role: .destructive) {
-                viewModel.emergencyReset()
-            }
-        } message: {
-            Text(StringConstants.emergencyResetMessage)
-        }
-        .alert(
-            "Important Information",
-            isPresented: Binding<Bool>(
-                get: {
-                    !viewModel.hasShownContentDisclaimer
-                    && !viewModel.isInitializing
                 },
-                set: { newValue in
-                    if !newValue {
-                        viewModel.hasShownContentDisclaimer = true
-                        UserDefaults.standard.set(
-                            true,
-                            forKey: "hasShownContentDisclaimer"
-                        )
-                    }
+                onCancel: {
+                    viewModel.isShowingModelConfigSheet = false  // Dismiss the sheet
+                    viewModel.cleanupTemporaryFile()  // Clean up temp file state
                 }
             )
-        ) {
-            Button("I Understand") {
-                viewModel.hasShownContentDisclaimer = true
-                UserDefaults.standard.set(
-                    true,
-                    forKey: "hasShownContentDisclaimer"
+        } else {
+            // Fallback if sheet is shown without necessary data (should not happen with current logic)
+            VStack {
+                Text(
+                    "Error: Missing model file information for configuration."
+                )
+                .padding()
+                Button("Dismiss") {
+                    viewModel.isShowingModelConfigSheet = false
+                }
+                .padding()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var errorOverlayContent: some View {
+        Group {
+            if let currentError = viewModel.currentError {
+                ErrorOverlayView(
+                    error: currentError,
+                    onRecovery: { action in
+                        viewModel.executeRecoveryAction(action)
+                    },
+                    onDismiss: { viewModel.clearCurrentError() }
                 )
             }
-        } message: {
-            Text(
-                "This app uses AI models to generate content. While we implement safeguards, AI may occasionally produce unexpected or inappropriate responses. Content is generated locally on your device and not monitored."
+        }
+    }
+    
+    @ViewBuilder
+    private var errorBannerContent: some View {
+        Group {
+            if let bannerError = viewModel.bannerError {
+                VStack {
+                    ErrorBannerView(
+                        error: bannerError,
+                        onDismiss: { viewModel.clearBannerError() },
+                        onRetry: { action in
+                            viewModel.executeRecoveryAction(action)
+                        }
+                    )
+                    .padding(.horizontal)
+                    Spacer()
+                }
+                .animation(.easeInOut, value: bannerError)
+            }
+        }
+    }
+    
+    private var contentDisclaimerBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                !viewModel.hasShownContentDisclaimer
+                && !viewModel.isInitializing
+            },
+            set: { newValue in
+                if !newValue {
+                    viewModel.hasShownContentDisclaimer = true
+                    UserDefaults.standard.set(
+                        true,
+                        forKey: "hasShownContentDisclaimer"
+                    )
+                }
+            }
+        )
+    }
+    
+    private func handleSheetDismiss() {
+        // This onDismiss is for the sheet itself.
+        // If the user cancels ModelConfigurationSheet, its onCancel should call cleanupTemporaryFile.
+        // If they complete, processConfiguredModel is called.
+        // This ensures cleanup if the sheet is dismissed by swipe without interaction.
+        if viewModel.pickedTemporaryModelFileURL != nil {  // If a file was picked but not processed
+            viewModel.logDebug(
+                "--- ModelConfigurationSheet dismissed, cleaning up any pending temporary file state. ---"
             )
+            viewModel.cleanupTemporaryFile()
         }
     }
     
