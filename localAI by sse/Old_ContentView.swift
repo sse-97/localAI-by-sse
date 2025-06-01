@@ -5,11 +5,18 @@
 //  Created by sse-97 on 17.05.25.
 //
 
-import Combine
-import LLM
-import SwiftUI
-import UniformTypeIdentifiers  // Required for UTType
+// import Combine
+// import LLM
+// import SwiftUI
+// import UniformTypeIdentifiers  // Required for UTType
 
+// MARK: - MIGRATED TO MODULAR STRUCTURE
+// The following sections have been migrated to separate files for better organization:
+
+// MIGRATED: DesignConstants -> Constants/DesignConstants.swift
+// MIGRATED: StringConstants -> Constants/StringConstants.swift
+
+/*
 // MARK: - Application-Wide Constants
 
 /// Defines standardized UI constants used throughout the application.
@@ -43,7 +50,12 @@ private enum StringConstants {
     "Are you sure you want to delete this model?"
     static let ggufDocumentTypeIdentifier = "com.ggerganov.gguf"  // A potential identifier, or use UTType by extension
 }
+*/
 
+// MIGRATED: UserAlert -> Models/DataModels.swift
+// MIGRATED: Template extensions -> Extensions/TemplateExtensions.swift
+
+/*
 // MARK: - User Alert Structure
 /// Represents an alert to be shown to the user.
 struct UserAlert: Identifiable {
@@ -93,7 +105,11 @@ extension Template {
         )
     }
 }
+*/
 
+// MIGRATED: TemplateType -> Models/DataModels.swift
+
+/*
 // MARK: - Template Selection Types
 
 /// Represents available template types for LLM models
@@ -146,7 +162,11 @@ enum TemplateType: String, CaseIterable, Identifiable, Codable {  // Made Codabl
         }
     }
 }
+*/
 
+// MIGRATED: All data models -> Models/DataModels.swift
+
+/*
 // MARK: - Data Models
 
 /// Represents a selectable LLM model configuration.
@@ -213,7 +233,12 @@ struct StoredUserModel: Codable, Identifiable {
         TemplateType(rawValue: templateTypeRawValue)
     }
 }
+*/
 
+// MIGRATED: Color extensions -> Extensions/ColorExtensions.swift
+// MIGRATED: UserDefaults extensions -> Extensions/UserDefaultsExtensions.swift
+
+/*
 // MARK: - UI Color Extensions
 
 /// Extends `Color` to provide platform-agnostic system colors.
@@ -230,7 +255,9 @@ extension Color {
         Color(UIColor.systemGray6)
     }
 }
+*/
 
+/*
 // MARK: - UserDefaults Extension
 
 /// Extends `UserDefaults` for type-safe access to stored application preferences.
@@ -276,7 +303,11 @@ extension UserDefaults {
         }
     }
 }
+*/
 
+// MIGRATED: View Modifiers -> Views/Modifiers/ViewModifiers.swift
+
+/*
 // MARK: - View Modifiers
 
 /// A `ViewModifier` to apply a standard message bubble appearance.
@@ -306,7 +337,11 @@ extension View {
         modifier(MessageBubbleStyle(isUserMessage: isUserMessage))
     }
 }
+*/
 
+// MIGRATED: ModelConfigurationSheet -> Views/Sheets/ModelConfigurationSheet.swift
+
+/*
 // MARK: - Custom Model Configuration Sheet
 
 /// Sheet for configuring a custom model after file selection
@@ -429,10 +464,14 @@ struct ModelConfigurationSheet: View {
         }
     }
 }
+*/
 
+// MIGRATED: DocumentPicker -> Views/Components/DocumentPicker.swift
+
+/*
 // MARK: - Document Picker
 
-struct DocumentPicker: UIViewControllerRepresentable {
+struct DocumentPicker: UIViewControllerRepresentative {
     let onDocumentPicked: (URL, String) -> Void
     
     // Define GGUF type for better filtering if possible
@@ -501,7 +540,13 @@ struct DocumentPicker: UIViewControllerRepresentable {
         }
     }
 }
+*/
 
+// MIGRATED: ChatViewModel -> ViewModels/ChatViewModel.swift
+// MIGRATED: ChatViewModel Custom Model Management -> ViewModels/ChatViewModel+ModelManagement.swift  
+// MIGRATED: ChatViewModel LLM Interaction -> ViewModels/ChatViewModel+LLMInteraction.swift
+
+/*
 // MARK: - ViewModel
 final class ChatViewModel: ObservableObject {
     // MARK: Published UI State Properties
@@ -1569,8 +1614,18 @@ extension ChatViewModel {
         logDebug("--- LLM observers set up successfully. ---")
     }
 }
+*/
 
-// MARK: - Chat UI Components
+// MIGRATED: All Chat UI Components -> Views/Components/
+// MIGRATED: MessageView -> Views/Components/MessageView.swift
+// MIGRATED: ParameterSettingView -> Views/Components/ParameterSettingView.swift  
+// MIGRATED: SystemMonitorView -> Views/Components/SystemMonitorView.swift
+// MIGRATED: ChatView -> Views/Components/ChatView.swift
+// MIGRATED: ErrorViews -> Views/Components/ErrorViews.swift
+// MIGRATED: PrivacyPolicyView -> Views/Components/PrivacyPolicyView.swift
+// MIGRATED: LaunchScreenView -> Views/Components/LaunchScreenView.swift
+
+/*
 
 /// A view that displays a single message (either from the user or the AI).
 struct MessageView: View {
@@ -2922,7 +2977,15 @@ struct LaunchScreenView: View {
         }
     }
 }
+*/
 
+// MIGRATED: Main App Entry -> localAI_by_sseApp.swift
+// MIGRATED: MainContentView -> Views/MainContentView.swift
+
+// MARK: - Remaining ContentView (Legacy/Reference)
+// MIGRATED: Main App Entry -> localAI_by_sseApp.swift
+
+/*
 // MARK: - Application Main Struct
 @main
 struct localAI_by_sseApp: App {
@@ -2948,3 +3011,48 @@ struct localAI_by_sseApp: App {
         }
     }
 }
+*/
+
+// MARK: - MIGRATION COMPLETE
+// This ContentView.swift file has been fully migrated to a modular structure.
+// All functionality has been moved to appropriate specialized files:
+//
+// Constants/
+//   - DesignConstants.swift
+//   - StringConstants.swift
+//
+// Extensions/
+//   - ColorExtensions.swift
+//   - TemplateExtensions.swift  
+//   - UserDefaultsExtensions.swift
+//
+// Models/
+//   - DataModels.swift
+//
+// ViewModels/
+//   - ChatViewModel.swift
+//   - ChatViewModel+LLMInteraction.swift
+//   - ChatViewModel+ModelManagement.swift
+//
+// Views/
+//   - MainContentView.swift
+//   - Components/
+//     - ChatView.swift
+//     - ParameterSettingView.swift
+//     - SystemMonitorView.swift
+//     - MessageView.swift
+//     - DocumentPicker.swift
+//     - ErrorViews.swift
+//     - PrivacyPolicyView.swift
+//     - LaunchScreenView.swift
+//     - LoadingView.swift
+//   - Modifiers/
+//     - ViewModifiers.swift
+//   - Sheets/
+//     - ModelConfigurationSheet.swift
+//
+// App Entry:
+//   - localAI_by_sseApp.swift
+//   - NewContentView.swift
+//
+// This file can now be archived or removed from the project.
