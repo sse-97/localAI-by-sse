@@ -21,6 +21,11 @@ struct ContentView: View {
             ) {
                 modelConfigurationSheetContent
             }
+            .sheet(isPresented: $viewModel.isShowingDocumentPicker) {
+                DocumentPicker { url, filename in
+                    viewModel.handlePickedModelFile(temporaryFileURL: url, originalFilename: filename)
+                }
+            }
             .alert(item: $viewModel.userAlert) { alertContent in
                 Alert(
                     title: Text(alertContent.title),

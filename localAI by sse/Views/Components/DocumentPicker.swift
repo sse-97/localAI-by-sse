@@ -20,9 +20,9 @@ struct DocumentPicker: UIViewControllerRepresentable {
     private static let ggufType = UTType(filenameExtension: "gguf", conformingTo: .data) ?? .data
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        // Try to use the specific GGUF type, fall back to generic data if it's nil (shouldn't be for .gguf)
+        // Use UTType.data to allow all files, but filter for .gguf extension
         let picker = UIDocumentPickerViewController(
-            forOpeningContentTypes: [Self.ggufType, UTType.data],
+            forOpeningContentTypes: [UTType.data],
             asCopy: true
         )
         picker.delegate = context.coordinator
@@ -51,6 +51,12 @@ struct DocumentPicker: UIViewControllerRepresentable {
             didPickDocumentsAt urls: [URL]
         ) {
             guard let pickedURL = urls.first else { return }
+            
+            // Check if the file has a .gguf extension
+            guard pickedURL.pathExtension.lowercased() == "gguf" else {
+                // If not a GGUF file, show an error or handle appropriately
+                return
+            }
             
             // Ensure we have security-scoped access to the URL if it's outside the app's sandbox
             // This is important for files picked from locations like "On My iPhone/iPad" or iCloud Drive.
